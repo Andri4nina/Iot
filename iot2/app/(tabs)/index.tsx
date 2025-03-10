@@ -1,79 +1,78 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, Text, View, Animated } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { LightSensor } from 'expo-sensors';
-import { LinearGradient } from 'expo-linear-gradient'; // Pour le fond dégradé
-import Slider from '@react-native-community/slider'; // Importer le Slider
+import { LinearGradient } from 'expo-linear-gradient';
+import Slider from '@react-native-community/slider';
 
 export default function HomeScreen() {
-  const [lightIntensity, setLightIntensity] = useState(null); // Lumière extérieure mesurée
-  const [lightOn, setLightOn] = useState(false); // État de l'ampoule (allumée/éteinte)
-  const [bulbLight, setBulbLight] = useState(50); // Intensité lumineuse de l'ampoule (0-100%)
-  const sliderValue = useRef(bulbLight); // Référence pour garder la valeur de l'intensité de l'ampoule stable
+  const [lightIntensity, setLightIntensity] = useState(null);
+  const [lightOn, setLightOn] = useState(false);
+  const [bulbLight, setBulbLight] = useState(50);
+  const sliderValue = useRef(bulbLight);
+
+  // Animation pour l'effet d'ampoule
+  const bulbOpacity = useRef(new Animated.Value(0)).current;
 
   const toggleLight = () => {
-    setLightOn((prev) => !prev); // Alterner l'état de la lumière
+    setLightOn((prev) => !prev);
+    // Animation pour l'effet d'ampoule
+    Animated.timing(bulbOpacity, {
+      toValue: lightOn ? 0 : 1, // Allume ou éteint l'ampoule
+      duration: 300, // Durée de l'animation
+      useNativeDriver: true, // Utilise le pilote natif pour de meilleures performances
+    }).start();
   };
 
   useEffect(() => {
-    // Configurer le capteur de lumière
-    LightSensor.setUpdateInterval(1000); // Mettre à jour toutes les secondes
+    LightSensor.setUpdateInterval(1000);
 
     const subscription = LightSensor.addListener((data) => {
-      // L'intensité lumineuse est donnée par la propriété `illuminance` (en lux)
       setLightIntensity(data.illuminance);
     });
 
-    // Nettoyer l'écouteur lors du démontage du composant
     return () => {
       subscription.remove();
     };
   }, []);
 
-  // Définir la couleur du texte en fonction de l'intensité lumineuse extérieure
   const getTextColor = () => {
     if (lightIntensity === null) {
-      return styles.defaultText; // Couleur par défaut si la mesure est en cours
+      return styles.defaultText;
     } else if (lightIntensity < 50) {
-      return styles.lowLightText; // Rouge pour une faible intensité lumineuse
+      return styles.lowLightText;
     } else if (lightIntensity >= 50 && lightIntensity <= 200) {
-      return styles.mediumLightText; // Orange pour une intensité lumineuse moyenne
+      return styles.mediumLightText;
     } else {
-      return styles.highLightText; // Vert pour une intensité lumineuse élevée
+      return styles.highLightText;
     }
   };
 
-  // Définir la couleur du bouton en fonction de l'intensité lumineuse extérieure
   const getButtonColor = () => {
     if (lightIntensity === null) {
-      return '#007BFF'; // Couleur par défaut (bleu)
+      return '#007BFF';
     } else if (lightIntensity < 50) {
-      return '#FF3B30'; // Rouge pour une faible intensité lumineuse
+      return '#FF3B30';
     } else if (lightIntensity >= 50 && lightIntensity <= 200) {
-      return '#FF9500'; // Orange pour une intensité lumineuse moyenne
+      return '#FF9500';
     } else {
-      return '#34C759'; // Vert pour une intensité lumineuse élevée
+      return '#34C759';
     }
   };
 
-  // Mettre à jour l'intensité lumineuse de l'ampoule en fonction du slider
   const handleSliderChange = (value) => {
-    sliderValue.current = value; // Mettre à jour la valeur du slider dans la référence
+    sliderValue.current = value;
   };
 
-  // Pour améliorer la fluidité de l'animation entre les changements
   const handleSliderComplete = () => {
-    setBulbLight(sliderValue.current); // Mettre à jour l'intensité lumineuse lorsque le slider est complet
+    setBulbLight(sliderValue.current);
   };
-  
-  
 
   return (
     <LinearGradient
-      colors={['#4c669f', '#3b5998', '#192f6a']} // Fond dégradé
+      colors={['#4c669f', '#3b5998', '#192f6a']}
       style={styles.gradientContainer}
     >
-      {/* Affichage de la lumière extérieure */}
       <ThemedView style={styles.container}>
         <Text style={[styles.text, getTextColor()]}>
           Intensité Lumineuse Extérieure :{' '}
@@ -81,8 +80,20 @@ export default function HomeScreen() {
         </Text>
       </ThemedView>
 
-      {/* Contrôle de l'ampoule */}
       <ThemedView style={styles.container}>
+        {/* Effet d'ampoule */}
+        <View style={styles.bulbContainer}>
+          <Animated.View
+            style={[
+              styles.bulb,
+              {
+                opacity: bulbOpacity, // Contrôle l'opacité de l'ampoule
+                backgroundColor: lightOn ? '#FFFF00' : '#CCCCCC', // Couleur de l'ampoule
+              },
+            ]}
+          />
+        </View>
+
         <View style={styles.lightStatusContainer}>
           <Text style={[styles.text, styles.lightStatusText]}>
             {lightOn ? 'Lumière allumée' : 'Lumière éteinte'}
@@ -95,7 +106,6 @@ export default function HomeScreen() {
         />
       </ThemedView>
 
-      {/* Slider pour régler l'intensité lumineuse de l'ampoule */}
       <ThemedView style={styles.container}>
         <Text style={styles.text}>Intensité de l'ampoule :</Text>
         <Slider
@@ -105,13 +115,12 @@ export default function HomeScreen() {
           step={1}
           value={bulbLight}
           onValueChange={handleSliderChange}
-          onSlidingComplete={handleSliderComplete} // Finaliser le changement uniquement après avoir relâché le slider
+          onSlidingComplete={handleSliderComplete}
           minimumTrackTintColor="#007BFF"
           maximumTrackTintColor="#CCCCCC"
           thumbTintColor="#007BFF"
-          disabled={!lightOn} // Désactiver le slider si l'ampoule est éteinte
+          disabled={!lightOn}
         />
-       
       </ThemedView>
     </LinearGradient>
   );
@@ -127,7 +136,7 @@ const styles = StyleSheet.create({
     width: '90%',
     padding: 20,
     borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Fond semi-transparent
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
@@ -142,16 +151,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   defaultText: {
-    color: 'black', // Couleur par défaut
+    color: 'black',
   },
   lowLightText: {
-    color: '#FF3B30', // Rouge pour une faible intensité lumineuse
+    color: '#FF3B30',
   },
   mediumLightText: {
-    color: '#FF9500', // Orange pour une intensité lumineuse moyenne
+    color: '#FF9500',
   },
   highLightText: {
-    color: '#34C759', // Vert pour une intensité lumineuse élevée
+    color: '#34C759',
   },
   lightStatusContainer: {
     flexDirection: 'row',
@@ -166,5 +175,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 40,
     marginBottom: 10,
+  },
+  bulbContainer: {
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  bulb: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#000',
   },
 });
