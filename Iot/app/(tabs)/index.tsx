@@ -21,14 +21,24 @@ export default function HomeScreen() {
     };
   }, []);
 
-  // Définir le mode sombre ou clair en fonction de l'intensité lumineuse
-  const textStyle = lightIntensity !== null && lightIntensity > 50 ? styles.lightText : styles.darkText;
+  // Définir la couleur du texte en fonction de l'intensité lumineuse
+  const getTextColor = () => {
+    if (lightIntensity === null) {
+      return styles.defaultText; // Couleur par défaut si la mesure est en cours
+    } else if (lightIntensity < 50) {
+      return styles.lowLightText; // Rouge pour une faible intensité lumineuse
+    } else if (lightIntensity >= 50 && lightIntensity <= 200) {
+      return styles.mediumLightText; // Orange pour une intensité lumineuse moyenne
+    } else {
+      return styles.highLightText; // Vert pour une intensité lumineuse élevée
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
-      <Text style={[styles.text, textStyle]}>
+      <Text style={[styles.text, getTextColor()]}>
         Intensité Lumineuse :{" "}
-        {lightIntensity !== null ? `${lightIntensity.toFixed(2)} lux` : "Mesure en cours..."}
+        {lightIntensity !== null ? `${lightIntensity} lux` : "Mesure en cours..."}
       </Text>
     </ThemedView>
   );
@@ -45,10 +55,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
-  lightText: {
-    color: "red", // Texte noir pour le mode clair
+  defaultText: {
+    color: "black", // Couleur par défaut
   },
-  darkText: {
-    color: "red", // Texte blanc pour le mode sombre
+  lowLightText: {
+    color: "red", // Rouge pour une faible intensité lumineuse
+  },
+  mediumLightText: {
+    color: "orange", // Orange pour une intensité lumineuse moyenne
+  },
+  highLightText: {
+    color: "green", // Vert pour une intensité lumineuse élevée
   },
 });
