@@ -6,7 +6,7 @@ using namespace websockets;
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
-const char* wsServer = "ws://192.168.88.106:5000";  // Adresse WebSocket du serveur Node.js
+const char* wsClient = "ws://192.168.88.106:5000";
 
 WebsocketsClient wsClient;
 
@@ -25,10 +25,18 @@ void setup() {
     // Connexion WebSocket
     if (wsClient.connect(wsServer)) {
         Serial.println("✅ Connexion WebSocket réussie !");
-        wsClient.send("Hello from ESP32!");
+
     } else {
         Serial.println("❌ Échec de la connexion WebSocket !");
     }
+
+    Serial.println("En attente du message...");
+wsClient.onMessage([](WebsocketsMessage message) {
+    Serial.print("📩 Données reçues: ");
+    Serial.println(message.data());
+});
+Serial.println("Message reçu, affiché ci-dessus.");
+
 }
 
 void loop() {
