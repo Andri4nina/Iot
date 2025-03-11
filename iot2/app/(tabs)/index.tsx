@@ -49,7 +49,7 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    ws.current = new WebSocket('ws://192.168.2.102:5000');
+    ws.current = new WebSocket('ws://192.168.88.106:5000');
 
     ws.current.onopen = () => console.log('WebSocket connecté');
     ws.current.onmessage = (event) => console.log('Données reçues:', event.data);
@@ -62,6 +62,13 @@ export default function HomeScreen() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ bulbLight }));
+      console.log('Données envoyées:', bulbLight);
+    }
+  }, [bulbLight]);
 
   const getTextColor = () => {
     if (lightIntensity === null) return styles.defaultText;
