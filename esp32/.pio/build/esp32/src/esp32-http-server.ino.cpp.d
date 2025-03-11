@@ -247,4 +247,7 @@
  .pio/libdeps/esp32/ArduinoWebsockets/src/tiny_websockets/internals/data_frame.hpp \
  .pio/libdeps/esp32/ArduinoWebsockets/src/tiny_websockets/client.hpp \
  .pio/libdeps/esp32/ArduinoWebsockets/src/tiny_websockets/internals/websockets_endpoint.hpp \
- .pio/libdeps/esp32/ArduinoWebsockets/src/tiny_websockets/server.hpp
+ .pio/libdeps/esp32/ArduinoWebsockets/src/tiny_websockets/server.hpp \
+ .pio/libdeps/esp32/ArduinoJson/src/ArduinoJson.h \
+ .pio/libdeps/esp32/ArduinoJson/src/ArduinoJson.hpp \
+ .pio/libdeps/esp32/ArduinoJson/src/ArduinoJson/Configuration.hpp
