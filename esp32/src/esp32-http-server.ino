@@ -1,13 +1,13 @@
 #include <WiFi.h>
 #include <ArduinoWebsockets.h>
-#include <ArduinoJson.h>  // Inclure la bibliothèque ArduinoJson
+#include <ArduinoJson.h>  // Pour parser le JSON
 
 using namespace websockets;
 
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
-const char* wsServerUrl = "ws://192.168.88.106:5000";  // Adresse WebSocket du serveur Node.js
+const char* wsServerUrl = "ws://192.168.88.27:5000";  // Adresse WebSocket du serveur Node.js
 
 WebsocketsClient wsClient;  // Créer l'objet WebsocketsClient
 
@@ -16,8 +16,20 @@ float illuminance = 0.0;
 bool lightOn = false;
 int bulbLight = 0;
 
+// Configuration de la LED
+const int ledPin = 5;  // Broche connectée à la LED
+const int pwmChannel = 0;  // Canal PWM (0-15)
+const int pwmResolution = 8;  // Résolution PWM (8 bits = valeurs de 0 à 255)
+
 void setup() {
     Serial.begin(115200);
+
+    // Configurer la broche de la LED en sortie
+    pinMode(ledPin, OUTPUT);
+
+    // Configurer le PWM
+    ledcSetup(pwmChannel, 5000, pwmResolution);  // Fréquence de 5 kHz, résolution de 8 bits
+    ledcAttachPin(ledPin, pwmChannel);  // Attacher la broche LED au canal PWM
 
     // Connexion WiFi
     WiFi.begin(ssid, password);
@@ -47,7 +59,7 @@ void setup() {
             // Extraire les données JSON dans les variables appropriées
             illuminance = doc["illuminance"];   // Exemple de champ illuminance
             lightOn = doc["lightOn"];           // Exemple de champ lightOn
-            bulbLight = doc["bulbLight"];         // Exemple de champ bulbLight
+            bulbLight = doc["bulbLight"];       // Exemple de champ bulbLight
 
             // Afficher les valeurs extraites
             Serial.print("Illuminance: ");
@@ -56,6 +68,18 @@ void setup() {
             Serial.println(lightOn ? "true" : "false");
             Serial.print("bulbLight: ");
             Serial.println(bulbLight);
+
+            // Contrôler la LED
+            if (lightOn) {
+                // Allumer la LED avec la luminosité définie par bulbLight
+                int brightness = map(bulbLight, 0, 100, 0, 255);  // Convertir bulbLight (0-100) en valeur PWM (0-255)
+                ledcWrite(pwmChannel, brightness);  // Appliquer la luminosité
+                Serial.println("LED allumée avec luminosité : " + String(brightness));
+            } else {
+                // Éteindre la LED
+                ledcWrite(pwmChannel, 0);  // Luminosité à 0
+                Serial.println("LED éteinte");
+            }
         });
     } else {
         Serial.println("❌ Échec de la connexion WebSocket !");
@@ -64,7 +88,4 @@ void setup() {
 
 void loop() {
     wsClient.poll();  // Maintenir la connexion WebSocket active
-
-    // Ici, tu peux utiliser les variables `illuminance`, `lighton` et `bublight` pour d'autres traitements.
-    // Par exemple, tu pourrais les utiliser pour contrôler des appareils ou afficher les valeurs.
 }
