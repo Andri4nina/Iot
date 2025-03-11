@@ -24,6 +24,12 @@ export default function HomeScreen() {
       duration: 300,
       useNativeDriver: true,
     }).start();
+
+    // ✅ Envoi de l'état de la lumière
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ lightOn: !lightOn }));
+      console.log('Données envoyées:', { lightOn: !lightOn });
+    }
   };
 
   useEffect(() => {
