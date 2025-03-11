@@ -6,61 +6,78 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
 
 export default function HomeScreen() {
-  const [lightIntensity, setLightIntensity] = useState(null);
-  const [lightOn, setLightOn] = useState(false);
-  const [bulbLight, setBulbLight] = useState(50);
-  const sliderValue = useRef(bulbLight);
+  const [lightIntensity, setLightIntensity] = useState<number | null>(null);
+  const [lightOn, setLightOn] = useState<boolean>(false);
+  const [bulbLight, setBulbLight] = useState<number>(50);
+  const sliderValue = useRef<number>(bulbLight);
+  const ws = useRef<WebSocket | null>(null);
 
-  // Animation pour l'effet d'ampoule
+  // ✅ Animation pour l'ampoule
   const bulbOpacity = useRef(new Animated.Value(0)).current;
 
   const toggleLight = () => {
     setLightOn((prev) => !prev);
-    // Animation pour l'effet d'ampoule
+    
+    // ✅ Animation d'allumage/extinction
     Animated.timing(bulbOpacity, {
       toValue: lightOn ? 0 : 1, // Allume ou éteint l'ampoule
-      duration: 300, // Durée de l'animation
-      useNativeDriver: true, // Utilise le pilote natif pour de meilleures performances
+      duration: 300,
+      useNativeDriver: true,
     }).start();
   };
 
   useEffect(() => {
-    LightSensor.setUpdateInterval(1000);
+    (async () => {
+      const isAvailable = await LightSensor.isAvailableAsync();
+      if (isAvailable) {
+        LightSensor.setUpdateInterval(1000);
 
-    const subscription = LightSensor.addListener((data) => {
-      setLightIntensity(data.illuminance);
-    });
+        const subscription = LightSensor.addListener((data) => {
+          setLightIntensity(data.illuminance);
+
+          if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({ illuminance: data.illuminance }));
+            console.log('Données envoyées:', data.illuminance);
+          }
+        });
+
+        return () => subscription.remove();
+      } else {
+        console.warn('Le capteur de lumière n\'est pas disponible sur cet appareil.');
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    ws.current = new WebSocket('ws://192.168.2.102:5000');
+
+    ws.current.onopen = () => console.log('WebSocket connecté');
+    ws.current.onmessage = (event) => console.log('Données reçues:', event.data);
+    ws.current.onerror = (error) => console.error('WebSocket erreur:', error);
+    ws.current.onclose = () => console.log('WebSocket déconnecté');
 
     return () => {
-      subscription.remove();
+      if (ws.current) {
+        ws.current.close();
+      }
     };
   }, []);
 
   const getTextColor = () => {
-    if (lightIntensity === null) {
-      return styles.defaultText;
-    } else if (lightIntensity < 50) {
-      return styles.lowLightText;
-    } else if (lightIntensity >= 50 && lightIntensity <= 200) {
-      return styles.mediumLightText;
-    } else {
-      return styles.highLightText;
-    }
+    if (lightIntensity === null) return styles.defaultText;
+    if (lightIntensity < 50) return styles.lowLightText;
+    if (lightIntensity <= 200) return styles.mediumLightText;
+    return styles.highLightText;
   };
 
   const getButtonColor = () => {
-    if (lightIntensity === null) {
-      return '#007BFF';
-    } else if (lightIntensity < 50) {
-      return '#FF3B30';
-    } else if (lightIntensity >= 50 && lightIntensity <= 200) {
-      return '#FF9500';
-    } else {
-      return '#34C759';
-    }
+    if (lightIntensity === null) return '#007BFF';
+    if (lightIntensity < 50) return '#FF3B30';
+    if (lightIntensity <= 200) return '#FF9500';
+    return '#34C759';
   };
 
-  const handleSliderChange = (value) => {
+  const handleSliderChange = (value: number) => {
     sliderValue.current = value;
   };
 
@@ -73,6 +90,7 @@ export default function HomeScreen() {
       colors={['#4c669f', '#3b5998', '#192f6a']}
       style={styles.gradientContainer}
     >
+      {/* Affichage de la lumière extérieure */}
       <ThemedView style={styles.container}>
         <Text style={[styles.text, getTextColor()]}>
           Intensité Lumineuse Extérieure :{' '}
@@ -80,15 +98,15 @@ export default function HomeScreen() {
         </Text>
       </ThemedView>
 
+      {/* Effet d'ampoule */}
       <ThemedView style={styles.container}>
-        {/* Effet d'ampoule */}
         <View style={styles.bulbContainer}>
           <Animated.View
             style={[
               styles.bulb,
               {
-                opacity: bulbOpacity, // Contrôle l'opacité de l'ampoule
-                backgroundColor: lightOn ? '#FFFF00' : '#CCCCCC', // Couleur de l'ampoule
+                opacity: bulbOpacity,
+                backgroundColor: lightOn ? '#FFFF00' : '#CCCCCC',
               },
             ]}
           />
@@ -106,6 +124,7 @@ export default function HomeScreen() {
         />
       </ThemedView>
 
+      {/* Slider pour l'intensité lumineuse */}
       <ThemedView style={styles.container}>
         <Text style={styles.text}>Intensité de l'ampoule :</Text>
         <Slider
