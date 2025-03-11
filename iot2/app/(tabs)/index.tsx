@@ -9,54 +9,64 @@ export default function HomeScreen() {
   const [lightIntensity, setLightIntensity] = useState<number | null>(null);
   const [lightOn, setLightOn] = useState<boolean>(false);
   const [bulbLight, setBulbLight] = useState<number>(50);
+  
   const sliderValue = useRef<number>(bulbLight);
   const ws = useRef<WebSocket | null>(null);
+  const lastLightOn = useRef(lightOn);
+  const lastBulbLight = useRef(bulbLight);
 
-  // ✅ Animation pour l'ampoule
-  const bulbOpacity = useRef(new Animated.Value(0)).current;
+  // Animation pour l'ampoule
+  const bulbOpacity = useRef(new Animated.Value(lightOn ? 1 : 0)).current;
 
-  const toggleLight = () => {
-    setLightOn((prev) => !prev);
-    
-    // ✅ Animation d'allumage/extinction
-    Animated.timing(bulbOpacity, {
-      toValue: lightOn ? 0 : 1, // Allume ou éteint l'ampoule
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-
-    // ✅ Envoi de l'état de la lumière
+  // ✅ Fonction pour envoyer les données au WebSocket
+  const sendData = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ lightOn: !lightOn }));
-      console.log('Données envoyées:', { lightOn: !lightOn });
+      const data = {
+        illuminance: lightIntensity,
+        lightOn: lastLightOn.current,
+        bulbLight: lastBulbLight.current,
+      };
+      ws.current.send(JSON.stringify(data));
+      console.log('Données envoyées:', data);
     }
   };
 
+  // ✅ Gestion de l'allumage/extinction de la lumière
+  const toggleLight = () => {
+    setLightOn((prev) => {
+      const newState = !prev;
+      lastLightOn.current = newState;
+      
+      Animated.timing(bulbOpacity, {
+        toValue: newState ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      sendData(); // Envoyer immédiatement après le changement
+      return newState;
+    });
+  };
+
+  // ✅ Initialisation du capteur de lumière
   useEffect(() => {
     (async () => {
       const isAvailable = await LightSensor.isAvailableAsync();
       if (isAvailable) {
         LightSensor.setUpdateInterval(1000);
-
         const subscription = LightSensor.addListener((data) => {
           setLightIntensity(data.illuminance);
-
-          if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify({ illuminance: data.illuminance }));
-            console.log('Données envoyées:', data.illuminance);
-          }
         });
-
         return () => subscription.remove();
       } else {
-        console.warn('Le capteur de lumière n\'est pas disponible sur cet appareil.');
+        console.warn("Le capteur de lumière n'est pas disponible.");
       }
     })();
   }, []);
 
+  // ✅ Connexion WebSocket
   useEffect(() => {
-    ws.current = new WebSocket('ws://192.168.43.56:5000');
-
+    ws.current = new WebSocket('ws://192.168.88.106:5000');
     ws.current.onopen = () => console.log('WebSocket connecté');
     ws.current.onmessage = (event) => console.log('Données reçues:', event.data);
     ws.current.onerror = (error) => console.error('WebSocket erreur:', error);
@@ -69,13 +79,23 @@ export default function HomeScreen() {
     };
   }, []);
 
+  // ✅ Envoi des données quand `lightIntensity` change
   useEffect(() => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ bulbLight }));
-      console.log('Données envoyées:', bulbLight);
-    }
-  }, [bulbLight]);
+    sendData();
+  }, [lightIntensity]);
 
+  // ✅ Gestion du slider
+  const handleSliderChange = (value: number) => {
+    sliderValue.current = value;
+  };
+
+  const handleSliderComplete = () => {
+    setBulbLight(sliderValue.current);
+    lastBulbLight.current = sliderValue.current;
+    sendData();
+  };
+
+  // ✅ Gestion des couleurs en fonction de la lumière
   const getTextColor = () => {
     if (lightIntensity === null) return styles.defaultText;
     if (lightIntensity < 50) return styles.lowLightText;
@@ -88,14 +108,6 @@ export default function HomeScreen() {
     if (lightIntensity < 50) return '#FF3B30';
     if (lightIntensity <= 200) return '#FF9500';
     return '#34C759';
-  };
-
-  const handleSliderChange = (value: number) => {
-    sliderValue.current = value;
-  };
-
-  const handleSliderComplete = () => {
-    setBulbLight(sliderValue.current);
   };
 
   return (
@@ -111,7 +123,7 @@ export default function HomeScreen() {
         </Text>
       </ThemedView>
 
-      {/* Effet d'ampoule */}
+      {/* Ampoule animée */}
       <ThemedView style={styles.container}>
         <View style={styles.bulbContainer}>
           <Animated.View
@@ -137,7 +149,7 @@ export default function HomeScreen() {
         />
       </ThemedView>
 
-      {/* Slider pour l'intensité lumineuse */}
+      {/* Slider pour l'intensité de l'ampoule */}
       <ThemedView style={styles.container}>
         <Text style={styles.text}>Intensité de l'ampoule :</Text>
         <Slider
@@ -182,18 +194,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  defaultText: {
-    color: 'black',
-  },
-  lowLightText: {
-    color: '#FF3B30',
-  },
-  mediumLightText: {
-    color: '#FF9500',
-  },
-  highLightText: {
-    color: '#34C759',
-  },
+  defaultText: { color: 'black' },
+  lowLightText: { color: '#FF3B30' },
+  mediumLightText: { color: '#FF9500' },
+  highLightText: { color: '#34C759' },
   lightStatusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
