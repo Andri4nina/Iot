@@ -6,7 +6,7 @@ using namespace websockets;
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
-const char* wsServer = "ws://192.168.43.56:5000";  // Adresse WebSocket du serveur Node.js
+const char* wsServer = "ws://192.168.88.106:5000";  // Adresse WebSocket du serveur Node.js
 
 WebsocketsClient wsClient;
 
