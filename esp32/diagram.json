@@ -8,7 +8,7 @@
       "id": "esp",
       "top": 9.6,
       "left": -4.76,
-      "attrs": { "env": "micropython-20231227-v1.22.0" }
+      "attrs": {}
     },
     {
       "type": "wokwi-led",
@@ -16,7 +16,7 @@
       "top": 136,
       "left": 272.6,
       "rotate": 180,
-      "attrs": { "color": "white", "flip": "1" }
+      "attrs": { "color": "red", "flip": "1" }
     },
     {
       "type": "wokwi-resistor",

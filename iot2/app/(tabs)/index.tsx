@@ -55,7 +55,7 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    ws.current = new WebSocket('ws://192.168.88.106:5000');
+    ws.current = new WebSocket('ws://192.168.43.56:5000');
 
     ws.current.onopen = () => console.log('WebSocket connecté');
     ws.current.onmessage = (event) => console.log('Données reçues:', event.data);
