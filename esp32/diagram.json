@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "author": "andriamanana faharetana",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 9.6,
+      "left": -4.76,
+      "attrs": { "env": "micropython-20231227-v1.22.0" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 136,
+      "left": 272.6,
+      "rotate": 180,
+      "attrs": { "color": "white", "flip": "1" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 137.8,
+      "left": 315.95,
+      "rotate": 270,
+      "attrs": { "value": "330" }
+    },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 56.3, "left": -240.2, "attrs": {} },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": 179.2,
+      "left": -340,
+      "attrs": { "pins": "i2c" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:5", "led1:A", "green", [ "h0" ] ],
+    [ "led1:C", "r1:1", "green", [ "v-9.6", "h-38", "v57.6", "h96" ] ],
+    [ "esp:GND.3", "r1:2", "black", [ "h144", "v0", "h105.6" ] ],
+    [ "pot1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot1:VCC", "green", [ "h-19.05", "v105.6", "h-172" ] ],
+    [ "esp:34", "pot1:SIG", "green", [ "h-9.45", "v76.8", "h-191.6" ] ],
+    [ "lcd1:VCC", "esp:3V3", "red", [ "h-28.8", "v-191.9", "h364.65" ] ],
+    [ "esp:GND.1", "lcd1:GND", "black", [ "h-345.45", "v48" ] ],
+    [ "esp:21", "lcd1:SDA", "green", [ "h297.6", "v259.2", "h-758.4", "v-115.4" ] ],
+    [ "esp:22", "lcd1:SCL", "green", [ "h288", "v278.4", "h-739.2", "v-96.3" ] ]
+  ],
+  "dependencies": {}
+}
