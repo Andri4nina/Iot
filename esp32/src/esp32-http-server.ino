@@ -7,7 +7,7 @@ using namespace websockets;
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
-const char* wsServerUrl = "ws://192.168.88.27:5000";  // Adresse WebSocket du serveur Node.js
+const char* wsServerUrl = "ws://192.168.193.190:5000";  // Adresse WebSocket du serveur Node.js
 
 WebsocketsClient wsClient;  // Créer l'objet WebsocketsClient
 
@@ -72,7 +72,7 @@ void setup() {
             // Contrôler la LED
             if (lightOn) {
                 // Allumer la LED avec la luminosité définie par bulbLight
-                int brightness = map(bulbLight, 0, 100, 0, 255);  // Convertir bulbLight (0-100) en valeur PWM (0-255)
+                int brightness = map(bulbLight, 0, 100, 0, 700);  // Convertir bulbLight (0-100) en valeur PWM (0-255)
                 ledcWrite(pwmChannel, brightness);  // Appliquer la luminosité
                 Serial.println("LED allumée avec luminosité : " + String(brightness));
             } else {

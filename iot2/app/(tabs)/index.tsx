@@ -14,6 +14,8 @@ export default function HomeScreen() {
   const ws = useRef<WebSocket | null>(null);
   const lastLightOn = useRef(lightOn);
   const lastBulbLight = useRef(bulbLight);
+  const turnOffTimer = useRef<NodeJS.Timeout | null>(null);
+
 
   // Animation pour l'ampoule
   const bulbOpacity = useRef(new Animated.Value(lightOn ? 1 : 0)).current;
@@ -66,7 +68,7 @@ export default function HomeScreen() {
 
   // ✅ Connexion WebSocket
   useEffect(() => {
-    ws.current = new WebSocket('ws://192.168.88.27:5000');
+    ws.current = new WebSocket('ws://192.168.193.190:5000');
     ws.current.onopen = () => console.log('WebSocket connecté');
     ws.current.onmessage = (event) => console.log('Données reçues:', event.data);
     ws.current.onerror = (error) => console.error('WebSocket erreur:', error);
@@ -83,6 +85,49 @@ export default function HomeScreen() {
   useEffect(() => {
     sendData();
   }, [lightIntensity]);
+
+// Allumer automatiquement la lumière si l'intensité est basse
+useEffect(() => {
+  if (lightIntensity !== null && lightIntensity < 50 && !lightOn) {
+    // Allumer immédiatement si lumière trop basse
+    setLightOn(true);
+    lastLightOn.current = true;
+
+    Animated.timing(bulbOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    sendData();
+
+    // Annuler un éventuel timer d'extinction en attente
+    if (turnOffTimer.current) {
+      clearTimeout(turnOffTimer.current);
+      turnOffTimer.current = null;
+    }
+  } 
+  else if (lightIntensity !== null && lightIntensity >= 100 && lightOn) {
+    // Démarrer un timer de 10 secondes avant d'éteindre
+    if (!turnOffTimer.current) {
+      turnOffTimer.current = setTimeout(() => {
+        setLightOn(false);
+        lastLightOn.current = false;
+
+        Animated.timing(bulbOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+
+        sendData();
+        turnOffTimer.current = null; // Réinitialiser le timer
+      }, 5000); // 10 secondes
+    }
+  }
+}, [lightIntensity]);
+
+
 
   // ✅ Gestion du slider
   const handleSliderChange = (value: number) => {
