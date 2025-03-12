@@ -17,7 +17,8 @@ WebsocketsClient wsClient;  // Objet WebsocketsClient
 float illuminance = 0.0;
 bool lightOn = false;
 int bulbLight = 0;
-int previousBulbLight = -1;  // Pour éviter l'affichage répétitif
+int previousBulbLight = -1;  // Stocke la luminosité précédente
+bool previousLightOn = false; // Stocke l'état précédent de la lumière
 
 // Configuration de la LED
 const int ledPin = 5;  // Broche connectée à la LED
@@ -88,14 +89,26 @@ void setup() {
             Serial.print("bulbLight: ");
             Serial.println(bulbLight);
 
-            // Mise à jour de l'affichage LCD uniquement si la valeur change
-            if (bulbLight != previousBulbLight) {
-                previousBulbLight = bulbLight;
-                lcd.setCursor(0, 1);
-                lcd.print("Ampoule:     ");  // Effacer ancienne valeur
-                lcd.setCursor(11, 1);
-                lcd.print(bulbLight);
-                lcd.print("%");
+            // Mise à jour de l'affichage LCD
+            if (lightOn) {
+                if (bulbLight != previousBulbLight || previousLightOn != lightOn) {
+                    previousBulbLight = bulbLight;
+                    previousLightOn = lightOn;
+                    lcd.clear();
+                    lcd.setCursor(0, 0);
+                    lcd.print("Intensite lampe");
+                    lcd.setCursor(0, 1);
+                    lcd.print(" ");
+                    lcd.print(bulbLight);
+                    lcd.print("%");
+                }
+            } else {
+                if (previousLightOn != lightOn) {
+                    previousLightOn = lightOn;
+                    lcd.clear();
+                    lcd.setCursor(0, 0);
+                    lcd.print("Ampoule eteinte");
+                }
             }
 
             // Contrôler la LED en fonction de bulbLight
